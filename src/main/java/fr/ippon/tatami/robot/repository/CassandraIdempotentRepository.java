@@ -75,6 +75,7 @@ public class CassandraIdempotentRepository implements IdempotentRepository<Strin
     @Override
     public boolean remove(String name) {
         Mutator<String> mutator = HFactory.createMutator(keyspaceOperator, StringSerializer.get());
+        mutator.delete(KEY, TATAMIBOT_DUPLICATE_CF, name, StringSerializer.get());
         return true;
     }
 
