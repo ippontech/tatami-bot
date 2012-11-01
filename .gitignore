@@ -1,0 +1,10 @@
+.idea
+*.iml
+tatami-bot.iml
+tatami-bot.ipr
+tatami-bot.iws
+.classpath
+.project
+.settings
+target
+.merge_file*
