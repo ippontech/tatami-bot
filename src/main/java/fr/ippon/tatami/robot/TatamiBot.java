@@ -2,7 +2,6 @@ package fr.ippon.tatami.robot;
 
 import fr.ippon.tatami.robot.processor.TatamiStatusProcessor;
 import org.apache.camel.builder.RouteBuilder;
-import org.apache.camel.builder.xml.XPathBuilder;
 import org.apache.camel.spi.IdempotentRepository;
 import org.apache.camel.spring.Main;
 import org.apache.commons.logging.Log;
@@ -18,13 +17,13 @@ import javax.inject.Inject;
 @Component
 public class TatamiBot extends RouteBuilder {
 
-    private static final Log log = LogFactory.getLog(RouteBuilder.class);
+    private static final Log log = LogFactory.getLog(TatamiBot.class);
 
     @Inject
-    private TatamiStatusProcessor tatamiStatusProcessor;
+    TatamiStatusProcessor tatamiStatusProcessor;
 
     @Inject
-    IdempotentRepository idempotentRepository;
+    IdempotentRepository<String> idempotentRepository;
 
     @Value("${tatami.rss.url}")
     private String rssUrl;
@@ -52,21 +51,42 @@ public class TatamiBot extends RouteBuilder {
         Main.main(args);
     }
 
+    @Override
     public void configure() {
 
         log.info("Configuring RSS support");
-        from("rss:" +
-                rssUrl +
-                "&lastUpdate=" +
-                rssLastUpdate).
-                marshal().rss().
-                setBody(XPathBuilder.xpath("concat('[', /rss/channel/item/title/text(), '](', /rss/channel/item/link/text(), ')')", String.class)).
+        from(getRssEndpointUri()).id("rss"). // return a single SyndFeed each time (with a single SyndEntry)  
+        		transform(simple("[${body.entries[0].title}](${body.entries[0].link})")).
                 idempotentConsumer(body(), idempotentRepository).
-                transform(body().append(" #BlogIppon #TatamiBot")).
-                process(tatamiStatusProcessor);
+                setHeader("SourceId",constant("BlogIppon")).
+                to("direct:toTatami");
 
         log.info("Configuring Twitter support");
-        from("twitter://timeline/user?user=" +
+        from(getTwitterEndpointUri()).id("twitter").
+                idempotentConsumer(body(), idempotentRepository).
+                setHeader("SourceId",constant("Twitter")).
+                to("direct:toTatami");
+
+//        log.info("Configuring Github support");
+        //https://github.com/eclipse/egit-github/tree/master/org.eclipse.egit.github.core
+        
+        
+        // TODO : switch from direct: endpoint to an asynchronous one : seda: or jms: (for throttling in particular) 
+        from("direct:toTatami").
+	        transform(body().append(simple(" #${header.SourceId} #TatamiBot"))).
+	        process(tatamiStatusProcessor);
+    }
+
+    String getRssEndpointUri() {
+    	String rssEndpointUrl = "rss:" +
+    			rssUrl +
+    			"&lastUpdate=" +
+    			rssLastUpdate;
+    	return rssEndpointUrl;
+    }
+
+    String getTwitterEndpointUri() {
+		String twitterEndpointUrl = "twitter://timeline/user?user=" +
                 twitterUser +
                 "&type=polling&delay=60&consumerKey=" +
                 twitterConsumerKey +
@@ -75,12 +95,9 @@ public class TatamiBot extends RouteBuilder {
                 "&accessToken=" +
                 twitterAccessToken +
                 "&accessTokenSecret=" +
-                twitterAccessTokenSecret).
-                idempotentConsumer(body(), idempotentRepository).
-                transform(body().append(" #Twitter #TatamiBot")).
-                process(tatamiStatusProcessor);
+                twitterAccessTokenSecret;
+	 	
+		return twitterEndpointUrl;
+	}
 
-        log.info("Configuring Github support");
-        //https://github.com/eclipse/egit-github/tree/master/org.eclipse.egit.github.core
-    }
 }
