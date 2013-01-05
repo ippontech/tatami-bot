@@ -102,7 +102,8 @@ public class TatamiBotTest extends CamelTestSupport {
     	Thread.sleep(1000); // will be necessary when send will be asynchronous
     	
     	assertThat(mockProcessor.messages.size(), is(1));
-    	assertThat(mockProcessor.messages.get(0), is("Sat Jan 05 12:34:00 CET 2013 (ippontech) a first tweet #Twitter #TatamiBot"));
+//    	assertThat(mockProcessor.messages.get(0), is("Sat Jan 05 12:34:00 CET 2013 (ippontech) a first tweet #Twitter #TatamiBot")); // Doesn't work : Timezone differ in CI server...
+    	assertThat(mockProcessor.messages.get(0), is(fakeStatus.getCreatedAt()+" (ippontech) a first tweet #Twitter #TatamiBot"));
 
     }
 
