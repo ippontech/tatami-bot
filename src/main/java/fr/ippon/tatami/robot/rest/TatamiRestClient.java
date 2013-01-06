@@ -77,10 +77,15 @@ public class TatamiRestClient {
         template.setErrorHandler(responseErrorHandler);
     }
 
+    @Deprecated
     public void postStatus(String content) {
         Status status = new Status();
         status.setContent(content);
-        template.postForObject(postStatusUrl, status, Object.class);
+        postStatus(status);
     }
+
+	public void postStatus(Status status) {
+		template.postForObject(postStatusUrl, status, Object.class);
+	}
 }
 

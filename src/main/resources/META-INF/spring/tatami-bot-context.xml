@@ -9,7 +9,7 @@
     <context:property-placeholder location="classpath*:/META-INF/spring/tatami-bot.properties"/>
 
     <camelContext id="camel" xmlns="http://camel.apache.org/schema/spring">
-        <routeBuilder ref="tatamiBot"/>
+        <contextScan/>
     </camelContext>
 
 </beans>
