@@ -55,7 +55,7 @@ public class CassandraIdempotentRepository implements IdempotentRepository<Strin
 
     @Override
     public boolean contains(String name) {
-        log.debug("Test message duplication");
+        log.debug("Testing message duplication");
         ColumnQuery<String, String, String> query = HFactory.createStringColumnQuery(keyspaceOperator);
 
         HColumn<String, String> column =
